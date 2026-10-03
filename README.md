@@ -6,6 +6,8 @@ It's the same category as Wistia or Vidyard, built from scratch: upload pipeline
 
 > **Note:** this repository is a project showcase, not the source code. The codebase was built as client/proprietary work and isn't included here — this README and the screenshots below document the system and the engineering behind it. See [PRD.md](PRD.md) for the full requirements write-up.
 
+**Role:** full-stack development — backend architecture (Laravel), the FFmpeg/HLS transcoding pipeline, the video.js player and its settings system, S3/Wasabi storage integration, and the YouTube/Vimeo/Facebook/Dropbox source adapters.
+
 ## Table of contents
 
 - [Screenshots](#screenshots)
