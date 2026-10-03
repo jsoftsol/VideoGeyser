@@ -1,4 +1,4 @@
-# Video Geyser — Product Requirements Document
+# Video Geyser: Product Requirements Document
 
 > This PRD is reverse-engineered from the shipped codebase rather than written ahead of development. It documents what the product does and is built to do, organized the way a product spec would be, for anyone evaluating the engineering and product thinking behind the implementation.
 
@@ -8,7 +8,7 @@ Video Geyser is a white-label video hosting and delivery platform for businesses
 
 ## 2. Problem statement
 
-Teams that want professional video hosting with lead-gen features (Wistia, Vidyard, etc.) either pay recurring per-GB hosting fees to a third party, or self-host and lose the player polish, CTA tooling, and analytics those platforms provide. Video Geyser targets the gap: keep ownership of the storage and its cost, but get the product layer — player, branding, CTAs, analytics — on top of it.
+Teams that want professional video hosting with lead-gen features (Wistia, Vidyard, etc.) either pay recurring per-GB hosting fees to a third party, or self-host and lose the player polish, CTA tooling, and analytics those platforms provide. Video Geyser targets the gap: keep ownership of the storage and its cost, but still get the product layer on top of it (player, branding, CTAs, analytics).
 
 ## 3. Target users
 
@@ -21,7 +21,7 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 ### 4.1 Implemented and working
 
 **Onboarding**
-- Guided 5-step wizard: choose storage provider (AWS or Wasabi) → enter provider API credentials → create a bucket via the provider's own API → create a default folder in that bucket → complete.
+- Guided 5-step wizard: choose storage provider (AWS or Wasabi), enter provider API credentials, create a bucket via the provider's own API, create a default folder in that bucket, complete.
 - Enforced globally: an `onboard` middleware blocks access to any authenticated feature until setup is finished.
 - Each step shows a sample video from a seeded demo library, so a new user sees the product working before they upload anything.
 
@@ -35,7 +35,7 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 - Large files upload directly to the user's bucket via S3 multipart upload; the `fileponds` table tracks upload/part state so uploads can resume.
 
 **Transcoding pipeline**
-- On upload, a chained job sequence runs: `ConvertVideo` (FFmpeg transcode to adaptive-bitrate HLS, writing directly to the user's bucket) → `UpdateM3U8Files` (rewrite ffmpeg's relative playlist paths into absolute CDN URLs for the correct region/provider) → `UpdateVideo` (finalize status).
+- On upload, a chained job sequence runs: `ConvertVideo` (FFmpeg transcode to adaptive-bitrate HLS, writing directly to the user's bucket), then `UpdateM3U8Files` (rewrite ffmpeg's relative playlist paths into absolute CDN URLs for the correct region/provider), then `UpdateVideo` (finalize status).
 - Renditions: up to 360p/276kbps, 480p/750kbps, 720p/2048kbps, 1080p/4096kbps, selectable per upload via a `formats_selected` flag.
 - A separate `CreateThumbnail` job (its own queue) grabs a frame at a user-chosen timestamp.
 - Live encode progress is written back to the video record and polled by the UI during upload.
@@ -49,8 +49,8 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 - Multi-source resolution: the same player also plays video sourced from YouTube, Vimeo, Facebook, or Dropbox, resolving the correct URL/mime type per provider (including refreshing temporary/signed links where the provider requires it).
 
 **Lead generation**
-- Templates: wrap a video in a CTA "end cap" — headline, resource-box copy, description, and a configurable CTA button (text, URL, color).
-- Presets: bundle a reusable combination of player settings + branding + CTAs, applicable across many videos or an entire folder.
+- Templates: wrap a video in a CTA "end cap" consisting of a headline, resource-box copy, description, and a configurable CTA button (text, URL, color).
+- Presets: bundle a reusable combination of player settings, branding, and CTAs, applicable across many videos or an entire folder.
 
 **Organization**
 - Hierarchy: Library (bucket) → Folder (with its own default preset/template/thumbnail-time) → Video.
@@ -65,7 +65,7 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 ### 4.2 Scaffolded but not finished (present in schema/code, not reachable from the UI)
 
 - **Campaign auto-publish**: `campaigns` (with `retargeting_code` and `auto_responder` fields) and `category_auto_inputs` (`auto_publish`, `share_instantly`) tables exist, and the YouTube/Vimeo/Dropbox integration classes contain large blocks of commented-out methods (`add_videos`, `search_videos`, `add_playlist_videos`, etc.) consistent with a planned "auto-pull new videos from a connected channel and auto-publish them into a category" feature. Not wired into any active controller.
-- **Transactions**: a `transactions` table exists (email, transaction ID, status, date) with no model relations to users or plans found in the controllers — most likely a landing table for an external payment webhook, not a working billing system.
+- **Transactions**: a `transactions` table exists (email, transaction ID, status, date) with no model relations to users or plans found in the controllers. Most likely a landing table for an external payment webhook, not a working billing system.
 
 ### 4.3 Explicitly out of scope (not present at all)
 
@@ -76,9 +76,9 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 
 ## 5. Key user flows
 
-**New account → first published video**
+**New account to first published video**
 1. Register/log in.
-2. Onboarding wizard: pick provider → enter keys → create bucket → create folder.
+2. Onboarding wizard: pick provider, enter keys, create bucket, create folder.
 3. Land on dashboard, create/select a Folder.
 4. Upload a video (chunked upload begins immediately).
 5. Pick resolutions to encode and a thumbnail timestamp.
@@ -86,7 +86,7 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 7. Apply a Preset or Template for branding/CTA, or configure the video individually.
 8. Copy the embed code or shareable player link.
 
-**Returning user → checking performance**
+**Returning user checking performance**
 1. Log in, open a video from the library.
 2. Review view/play/completion counts and drop-off data.
 3. Review Template click-through stats if a CTA template is attached.
@@ -94,14 +94,14 @@ Teams that want professional video hosting with lead-gen features (Wistia, Vidya
 ## 6. Non-functional characteristics (as implemented)
 
 - **Processing model**: encoding and thumbnailing run asynchronously on Redis-backed queues (Laravel Horizon), so uploads don't block on transcode time; separate queues isolate thumbnail generation from video conversion.
-- **Storage cost model**: storage and egress costs are the customer's own (their bucket, their contract with AWS/Wasabi) — the app has no storage cost of its own at scale.
+- **Storage cost model**: storage and egress costs are the customer's own (their bucket, their contract with AWS/Wasabi), so the app carries no storage cost of its own at scale.
 - **Session-based auth**: standard Laravel session authentication; Sanctum is present but not meaningfully used (`routes/api.php` is the unmodified stub).
 - **Local dev environment**: Laravel Sail (Docker) with PHP 8.2, MySQL 8.0, Redis.
 
 ## 7. Risks / technical debt observed
 
-- Commit history (`git log`) carries no message discipline (`updates`, `fix`, `debug`) — no changelog can be reconstructed from it; this document is based on reading the code directly, not commit messages.
-- At least one debug statement and a hardcoded production bucket reference were found in `PlayerController::direct()` at the time of writing — a reminder that the public-facing player path should get a security/cleanliness pass before any production promotion beyond what's already deployed.
+- Commit history (`git log`) carries no message discipline (`updates`, `fix`, `debug`), so no changelog can be reconstructed from it; this document is based on reading the code directly, not commit messages.
+- At least one debug statement and a hardcoded production bucket reference were found in `PlayerController::direct()` at the time of writing. A reminder that the public-facing player path should get a security/cleanliness pass before any production promotion beyond what's already deployed.
 - No automated tests exist, so regressions in the transcoding chain or multi-provider source resolution would only surface manually.
 
 ## 8. Possible roadmap (inferred from unfinished scaffolding, not confirmed plans)
